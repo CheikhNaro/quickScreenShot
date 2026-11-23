@@ -12,8 +12,13 @@ outlineThickness = 2
 bottomMargin = 60
 # Global animation toggle (true/false)
 animations = true
-# Tool to use for the "edit" screenshot action (e.g., "satty" or "gradia")
-annotationTool = "satty"
+# Tool to use for the "edit" screenshot action.
+# "auto" picks the first available: noctalia, satty, gradia.
+# Other values: "noctalia", "satty", "gradia", "none" (save without editing).
+annotationTool = "auto"
+# Notification backend: "auto" (noctalia, then notify-send), "noctalia",
+# "libnotify", or "none".
+notifications = "auto"
 
 [bar]
 # Segmented control background

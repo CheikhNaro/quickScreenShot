@@ -27,25 +27,13 @@
  */
  
 import QtQuick  
-import Quickshell.Hyprland
-
 Item {  
     id: root
 
-    property var monitor: Hyprland.focusedMonitor
-    property var windows: {
-        const list = [];
-        const toplevels = Hyprland.toplevels;
-        const all = (typeof toplevels.values === 'function') ? Array.from(toplevels.values()) : (toplevels.values || toplevels);
-        
-        for (let i = 0; i < all.length; i++) {
-            const w = all[i];
-            if (w && w.monitor && root.monitor && w.monitor.name === root.monitor.name) {
-                list.push(w);
-            }
-        }
-        return list;
-    }
+    // { name, x, y, width, height } in global layout coordinates
+    property var monitor: null
+    // [{ x, y, w, h, output, title, appid }] in global layout coordinates
+    property var windows: []
 
     signal regionSelected(real x, real y, real width, real height)
     property alias pressed: mouseArea.pressed
@@ -68,20 +56,16 @@ Item {
     property bool animateSelection: true
 
     function hitWindow(mx, my) {
-        if (!monitor || !monitor.lastIpcObject)
+        if (!monitor)
             return null;
-        const mx0 = monitor.lastIpcObject.x;
-        const my0 = monitor.lastIpcObject.y;
         const list = windows;
         for (let i = list.length - 1; i >= 0; i--) {
             const w = list[i];
-            if (!w || !w.lastIpcObject) continue;
-            const wx = w.lastIpcObject.at[0] - mx0;
-            const wy = w.lastIpcObject.at[1] - my0;
-            const ww = w.lastIpcObject.size[0];
-            const wh = w.lastIpcObject.size[1];
-            if (mx >= wx && mx <= wx + ww && my >= wy && my <= wy + wh) {
-                return { x: wx, y: wy, w: ww, h: wh };
+            if (!w) continue;
+            const wx = w.x - monitor.x;
+            const wy = w.y - monitor.y;
+            if (mx >= wx && mx <= wx + w.w && my >= wy && my <= wy + w.h) {
+                return { x: wx, y: wy, w: w.w, h: w.h };
             }
         }
         return null;

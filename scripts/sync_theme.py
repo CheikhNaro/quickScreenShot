@@ -6,7 +6,13 @@ import re
 
 # Define paths
 NOCTALIA_COLORS = os.path.expanduser("~/.config/noctalia/colors.json")
-THEME_TOML = os.path.expanduser("~/.config/hyprquickframe/theme.toml")
+THEME_CANDIDATES = [
+    os.path.expanduser("~/.config/quickScreenShot/theme.toml"),
+    os.path.expanduser("~/.config/quickshell/quickScreenShot/theme.toml"),
+]
+THEME_TOML = next((p for p in THEME_CANDIDATES if os.path.isfile(p)), THEME_CANDIDATES[0])
+if len(sys.argv) > 1:
+    THEME_TOML = os.path.expanduser(sys.argv[1])
 
 # Mapping: (Section, Key) -> Noctalia Color Key
 # Section None means global

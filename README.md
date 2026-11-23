@@ -1,214 +1,234 @@
-# HyprQuickFrame
+# quickScreenShot
 
-A polished, native screenshot utility for Hyprland built with **Quickshell**.
-Features a modern overlay UI with shader-based dimming, bouncy animations, and intelligent window snapping.
+A polished, native screenshot utility built with **Quickshell** for Wayland
+compositors. It ships with a modern overlay UI, shader-based dimming, bouncy
+animations and intelligent window snapping, and works with **Hyprland**,
+**MangoWM** and **Umbriel** through a small compositor abstraction layer.
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Wayland](https://img.shields.io/badge/Wayland-Native-green.svg)
 ![Quickshell](https://img.shields.io/badge/Built%20With-Quickshell-cba6f7.svg)
-![Hyprland](https://img.shields.io/badge/Desktop-Hyprland-blue.svg)
-![Nix](https://img.shields.io/badge/Nix-Flake-blue.svg)
+![Compositors](https://img.shields.io/badge/Compositors-Hyprland%20%7C%20MangoWM%20%7C%20Umbriel-blue.svg)
 
 ## ✨ Features
 
-* **Capture Modes:** Region (drag to select), Window (hover to select), and Temp (clipboard-only).
-* **KDE Connect** Push screenshots directly to your phone.
-* **Editor Support:** Integrates with `satty` or `gradia` for immediate post-capture annotation.
-
-## 🎥 Demo
-
-<details>
-<summary>Click to watch the demo</summary>
-<video src="https://github.com/user-attachments/assets/1c15ba34-3571-4f62-8dc2-4d1997ce41e2" controls="controls"> </video>
-<video src="https://github.com/user-attachments/assets/904066a7-3a67-4795-8353-0461219386a7" controls="controls"> </video>
-</details>
-
-## ⌨️ Shortcuts
-
-* `r`: Region Mode
-* `w`: Window Mode
-* `s`: Full Screen Capture
-* `t`: Toggle Temp Mode
-* `k`: Toggle KDE Share
-* `Esc,q`: Quit
+* **Capture modes:** region (drag to select), window (hover to select) and
+  temp (clipboard only).
+* **Full-screen capture:** press `s` in the overlay.
+* **Optional annotation:** hands the capture to Noctalia, Satty or Gradia when
+  one of them is installed.
+* **Optional notifications:** uses Noctalia when available, then falls back to
+  libnotify, or stays silent.
+* **Optional KDE Connect:** push screenshots directly to your phone.
+* **Compositor aware:** monitors, windows and pointer position are read from
+  the running compositor (Hyprland, MangoWM or Umbriel).
+* **Themable:** colors, spacing, animation and integrations live in a single
+  `theme.toml`.
 
 ## 📦 Requirements
 
-1. **[Quickshell](https://github.com/outfoxxed/quickshell)** (or `noctalia-qs` on Fedora)
-2. `grim` (Screen capture)
-3. `imagemagick` (Image processing)
-4. `wl-clipboard` (Clipboard support)
-5. `satty` or `gradia` (Optional: for Editor Mode)
-6. `kdeconnect` (Optional: for Share Mode)
-7. `libnotify` (For notifications)
+Required:
+
+1. A Wayland compositor with `wlr-screencopy` support (Hyprland, MangoWM,
+   Umbriel, or another wlroots-based compositor).
+2. [`quickshell`](https://quickshell.org/) 0.3 or newer.
+3. `grim` for the actual capture.
+4. `wl-clipboard` for clipboard output.
+
+Optional:
+
+5. [`noctalia`](https://github.com/noctalia-dev/noctalia) for built-in image
+   annotation and notifications.
+6. `satty` or `gradia` if you prefer a standalone annotation tool.
+7. `libnotify` (`notify-send`) if you want notifications without Noctalia.
+8. `kdeconnect` for the Share toggle.
+
+> Satty, Gradia, libnotify and KDE Connect are never required. Missing tools are
+> simply skipped.
 
 ## 🚀 Installation
 
-### 1. Install System Dependencies
+Clone the repository into your Quickshell configuration directory:
 
-**Arch Linux:**
-
-```bash
-sudo pacman -S grim imagemagick wl-clipboard libnotify satty # Add satty or gradia depending on preference
+```sh
+git clone https://github.com/CheikhNaro/quickScreenShot.git \
+  ~/.config/quickshell/quickScreenShot
 ```
 
-**Fedora:**
+Or keep it anywhere and pass its path directly:
 
-```bash
-sudo dnf install grim ImageMagick wl-clipboard libnotify satty # Add satty or gradia depending on preference
+```sh
+git clone https://github.com/CheikhNaro/quickScreenShot.git ~/quickScreenShot
+qs -p ~/quickScreenShot
 ```
 
-### 2. Install Quickshell
+Test it once:
 
-**Arch Linux:**
-
-```bash
-yay -S quickshell-git
+```sh
+qs -c quickScreenShot -n
 ```
 
-### 3. Install HyprQuickFrame
+## ⚙️ Compositor configuration
 
-**AUR (Recommended):** Maintainer: [knownasnaffy](https://github.com/knownasnaffy)
+The utility is launched with Quickshell and reads `QSS_MODE` and `QSS_ACTION`
+from the environment:
 
-```bash
-yay -S hyprquickframe-git
-```
+| Variable     | Values                  | Effect                                   |
+| ------------ | ----------------------- | ---------------------------------------- |
+| `QSS_MODE`   | `region`, `window`      | Initial selection mode (default `region`) |
+| `QSS_ACTION` | `edit`, `temp`, `share` | Pre-select an action                      |
 
-**Manual:**
+The older `HQF_MODE` / `HQF_ACTION` names are still accepted.
 
-1. Clone Repository
+### Hyprland
 
-```bash
-git clone https://github.com/Ronin-CK/HyprQuickFrame ~/.config/quickshell/HyprQuickFrame
-```
-
-2. Basic Test
-
-```bash
-# On Arch Linux:
-quickshell -c HyprQuickFrame -n
-
-# On Fedora:
-noctalia-qs -c HyprQuickFrame -n
-```
-
-## ❄️ Nix Installation
-
-This project includes a `flake.nix` for easy installation.
-
-**Run directly:**
-
-```bash
-nix run github:Ronin-CK/HyprQuickFrame
-```
-
-**Install in configuration:**
-Add to your inputs:
-
-```nix
-inputs.HyprQuickFrame.url = "github:Ronin-CK/HyprQuickFrame";
-inputs.HyprQuickFrame.inputs.nixpkgs.follows = "nixpkgs";
-```
-
-Then add to your packages:
-
-```nix
-environment.systemPackages = [ inputs.HyprQuickFrame.packages.${pkgs.system}.default ];
-```
-
-## ⚙️ Configuration (Hyprland)
-
-Add the following keybinding to your `hyprland.lua`:
+`~/.config/hypr/hyprland.conf`:
 
 ```ini
--- Opens HyprQuickFrame - Decided on-the-fly whether to Edit, Save, or Copy
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("quickshell -c HyprQuickFrame -n"))
-
--- Pre-selects the "window" mode (options: region, window)
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("env HQF_MODE=window quickshell -c HyprQuickFrame -n"))
-
--- Pre-selects the "temp" action (options: temp, edit, share) natively
-hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("env HQF_ACTION=temp quickshell -c HyprQuickFrame -n"))
+# Open quickScreenShot
+bind = SUPER SHIFT, S, exec, qs -c quickScreenShot -n
+# Start in window mode
+bind = SUPER SHIFT, W, exec, env QSS_MODE=window qs -c quickScreenShot -n
+# Copy to clipboard only
+bind = SUPER SHIFT, C, exec, env QSS_ACTION=temp qs -c quickScreenShot -n
+# Open with annotation
+bind = SUPER SHIFT, E, exec, env QSS_ACTION=edit qs -c quickScreenShot -n
 ```
 
-Or, if you are using the older `hyprland.conf` file:
+### MangoWM
+
+`~/.config/mango/config.conf` (or any included module):
 
 ```ini
-# Opens HyprQuickFrame - Decided on-the-fly whether to Edit, Save, or Copy
-bind = SUPER SHIFT, S, exec, quickshell -c HyprQuickFrame -n
-
-# Pre-selects the "window" mode (options: region, window)
-bind = SUPER SHIFT, W, exec, env HQF_MODE=window quickshell -c HyprQuickFrame -n
-
-# Pre-selects the "temp" action (options: temp, edit, share) natively
-bind = SUPER SHIFT, C, exec, env HQF_ACTION=temp quickshell -c HyprQuickFrame -n
+bind=SUPER,S,spawn,qs -c quickScreenShot -n
+bind=SUPER,W,spawn,env QSS_MODE=window qs -c quickScreenShot -n
+bind=SUPER,C,spawn,env QSS_ACTION=temp qs -c quickScreenShot -n
+bind=SUPER,E,spawn,env QSS_ACTION=edit qs -c quickScreenShot -n
 ```
 
-## 🛠️ Theme Configuration
+MangoWM does not mark a focused monitor, so quickScreenShot uses the pointer
+position to choose the active output.
 
-Copy the default `theme.toml` to `~/.config/hyprquickframe/theme.toml` to customize. Changes apply instantly!
+### Umbriel
 
-The application checks for `theme.toml` in this order:
-1. `~/.config/hyprquickframe/theme.toml` (Recommended)
-2. `~/.config/quickshell/HyprQuickFrame/theme.toml`
-3. `[Install Directory]/theme.toml`
-
-### Global Options
-
-Configure animations and your preferred annotation tool inside `theme.toml`:
+`~/.config/umbriel/config.toml`:
 
 ```toml
-# Enable or disable animations (default: true)
+[keybinds]
+"Mod+S" = "spawn qs -c quickScreenShot -n"
+"Mod+W" = "spawn env QSS_MODE=window qs -c quickScreenShot -n"
+"Mod+C" = "spawn env QSS_ACTION=temp qs -c quickScreenShot -n"
+"Mod+E" = "spawn env QSS_ACTION=edit qs -c quickScreenShot -n"
+```
+
+`spawn` runs its command through the shell, so the environment prefix works as
+written.
+
+### Other compositors
+
+On any other wlroots-based compositor, region and temp captures still work from
+the Quickshell screen list. Window mode requires one of the three supported
+compositors above.
+
+## ⌨️ Overlay shortcuts
+
+| Key       | Action                          |
+| --------- | ------------------------------- |
+| Drag      | Select a region                 |
+| `w`       | Window selection mode           |
+| `r`       | Region selection mode           |
+| `s`       | Capture the whole screen        |
+| `e`       | Toggle annotation               |
+| `t`       | Toggle clipboard-only mode      |
+| `k`       | Toggle KDE Connect sharing      |
+| `Esc`, `q`| Quit without capturing          |
+
+## 🎨 Configuration
+
+Copy `theme.toml` to one of these locations (first match wins):
+
+1. `~/.config/quickScreenShot/theme.toml`
+2. `~/.config/quickshell/quickScreenShot/theme.toml`
+
+Otherwise the bundled `theme.toml` is used. Changes apply the next time the
+overlay opens.
+
+```toml
+accent = "#cba6f7"
+accentText = "#11111b"
+dimOpacity = 0.6
+borderRadius = 10
+outlineThickness = 2
+bottomMargin = 60
 animations = true
-# Tool to use for the "edit" screenshot action (e.g., "satty" or "gradia")
-annotationTool = "satty"
+
+# "auto" picks the first available: noctalia, satty, gradia.
+# Other values: "noctalia", "satty", "gradia", "none".
+annotationTool = "auto"
+
+# "auto" (noctalia, then notify-send), "noctalia", "libnotify" or "none".
+notifications = "auto"
 ```
 
-##  Noctalia Support
+### Annotation
 
-HyprQuickFrame can automatically sync its colors with your wallpaper using [Noctalia](https://github.com/Ronin-CK/Noctalia).
+With `annotationTool = "auto"`:
 
-### Setup
+* `noctalia msg annotate` is used when Noctalia is installed. The raw capture
+  is opened in Noctalia's editor, which applies its own save/copy settings.
+* Otherwise `satty` is used, then `gradia`.
+* `none` saves the capture without opening an editor.
 
-1. Make the sync script executable:
-   ```bash
-   chmod +x /path/to/HyprQuickFrame/scripts/sync_theme.py
-   ```
-2. Add it to your Noctalia `wallpaperChange` hook in `~/.config/noctalia/settings.json`:
-   ```json
-   "hooks": {
-       "enabled": true,
-       "wallpaperChange": "python3 /path/to/HyprQuickFrame/scripts/sync_theme.py"
-   }
-   ```
-3. **Dynamic Toggle Colors (Optional):** To allow toggle buttons to sync dynamically, delete or comment out the `background` key under the `[toggle]` section in your `theme.toml`.
+### Notifications
 
+With `notifications = "auto"`, Noctalia is preferred and `notify-send` is the
+fallback. Set `notifications = "none"` to disable them completely.
 
-##  Troubleshooting
+### Noctalia color sync
 
-### Gray Screen / Blank Overlay on Nvidia
-If you are using an Nvidia GPU with the Vulkan renderer (e.g. `WLR_RENDERER=vulkan` and `QSG_RHI_BACKEND=vulkan`) and the preview overlay displays as a completely gray or blank screen, this is a known issue with Quickshell's DMABUF modifier support on Nvidia. 
+`scripts/sync_theme.py` copies the current Noctalia palette into `theme.toml`:
 
-To fix this, you must launch HyprQuickFrame with the `QS_DISABLE_DMABUF=1` environment variable.
-
-You can modify your `hyprland.lua` bindings to include this variable:
-```ini
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("env QS_DISABLE_DMABUF=1 quickshell -c HyprQuickFrame -n"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("env QS_DISABLE_DMABUF=1 HQF_MODE=window quickshell -c HyprQuickFrame -n"))
-hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("env QS_DISABLE_DMABUF=1 HQF_ACTION=temp quickshell -c HyprQuickFrame -n"))
-```
-Or, if you are using the older `hyprland.conf` file, include the following variables:
-```ini
-bind = SUPER SHIFT, S, exec, env QS_DISABLE_DMABUF=1 quickshell -c HyprQuickFrame -n
-bind = SUPER SHIFT, W, exec, env QS_DISABLE_DMABUF=1 HQF_MODE=window quickshell -c HyprQuickFrame -n
-bind = SUPER SHIFT, C, exec, env QS_DISABLE_DMABUF=1 HQF_ACTION=temp quickshell -c HyprQuickFrame -n
+```sh
+python3 ~/.config/quickshell/quickScreenShot/scripts/sync_theme.py
 ```
 
-## ⚖️ License & Attribution
+Run it from a Noctalia template hook or a wallpaper-change hook to keep the
+overlay in sync with your theme.
 
-This project is licensed under the **MIT License**.
+### Post-save hook
 
-* **Original Work:** [HyprQuickshot](https://github.com/JamDon2/hyprquickshot) © 2025 JamDon2.
-* **Enhancements & Modifications:** © 2026 Chandra Kant (Ronin-CK).
+`[hooks] postSaveHook` runs a command after a successful save. Placeholders:
+`%f` full path, `%n` filename, `%d` directory, `%t` timestamp.
 
-HyprQuickFrame began as a fork of HyprQuickshot. It has been significantly extended with a custom Quickshell UI and an integrated editor mode. We honor the original work of JamDon2 while providing a modernized experience for Hyprland users.
+## 🛠 Troubleshooting
+
+**Black or empty overlay, or the window never appears**
+
+Some GPU/driver combinations fail to share DMA-BUF buffers. Launch with
+DMABUF disabled:
+
+```sh
+QS_DISABLE_DMABUF=1 qs -c quickScreenShot -n
+```
+
+**Window mode selects nothing**
+
+Window mode relies on compositor IPC:
+
+* Hyprland: `hyprctl`
+* MangoWM: `mmsg`
+* Umbriel: `umbriel`
+
+Check that the matching command is in `PATH` and answers outside the overlay.
+
+**No annotation or notification appears**
+
+Install Noctalia, Satty, Gradia or `libnotify`, or set the corresponding option
+explicitly in `theme.toml`.
+
+## 🙏 Credits
+
+quickScreenShot began as a fork of
+[HyprQuickshot](https://github.com/JamDon2/HyprQuickshot) by JamDon2 and was
+extended with a custom Quickshell UI, compositor abstraction and integration
+options. The original MIT license and copyright notices are preserved.

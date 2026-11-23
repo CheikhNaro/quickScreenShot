@@ -1,5 +1,5 @@
 {
-  description = "Polished screenshot utility for Hyprland built with Quickshell";
+  description = "Polished screenshot utility for Wayland compositors built with Quickshell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,25 +15,24 @@
       forAllSystems =
         f: nixpkgs.lib.genAttrs supportedSystems (system: f (import nixpkgs { inherit system; }));
 
-      # Define runtime dependencies once
+      # Required at runtime. Optional integrations (noctalia, satty, gradia,
+      # libnotify, kdeconnect) are detected when present in PATH.
       runtimeDeps =
         pkgs: with pkgs; [
           quickshell
           grim
           imagemagick
           wl-clipboard
-          satty
-          libnotify
         ];
     in
     {
       overlays.default = final: prev: {
-        hyprquickframe = self.packages.${final.system}.default;
+        quickScreenShot = self.packages.${final.system}.default;
       };
 
       packages = forAllSystems (pkgs: {
         default = pkgs.stdenv.mkDerivation {
-          pname = "hyprquickframe";
+          pname = "quickscreenshot";
           version = "0.1.0";
 
           src = pkgs.lib.cleanSourceWith {
@@ -67,23 +66,23 @@
           installPhase = ''
             runHook preInstall
 
-            mkdir -p $out/share/hyprquickframe
-            cp -r . $out/share/hyprquickframe/
+            mkdir -p $out/share/quickscreenshot
+            cp -r . $out/share/quickscreenshot/
 
             mkdir -p $out/bin
-            makeWrapper ${pkgs.quickshell}/bin/quickshell $out/bin/hyprquickframe \
+            makeWrapper ${pkgs.quickshell}/bin/quickshell $out/bin/quickscreenshot \
               --prefix PATH : ${pkgs.lib.makeBinPath (runtimeDeps pkgs)} \
-              --add-flags "-c $out/share/hyprquickframe -n"
+              --add-flags "-c $out/share/quickscreenshot -n"
 
             runHook postInstall
           '';
 
           meta = with pkgs.lib; {
-            description = "Quickshell-based screenshot utility for Hyprland";
-            homepage = "https://github.com/Ronin-CK/HyprQuickFrame";
+            description = "Quickshell-based screenshot utility for Wayland compositors";
+            homepage = "https://github.com/CheikhNaro/quickScreenShot";
             license = licenses.mit;
             platforms = platforms.linux;
-            mainProgram = "hyprquickframe";
+            mainProgram = "quickscreenshot";
           };
         };
       });

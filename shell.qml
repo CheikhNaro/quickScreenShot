@@ -8,7 +8,6 @@
 import QtQuick
 import QtQuick.Controls
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -17,13 +16,26 @@ import "components"
 Scope {
     id: root
 
-    property var hyprlandMonitor: Hyprland.focusedMonitor
-    property string activeScreenName: hyprlandMonitor ? hyprlandMonitor.name : (Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")
-    property string mode: ["region", "window"].indexOf(Quickshell.env("HQF_MODE")) !== -1 ? Quickshell.env("HQF_MODE") : "region"
+    Compositor {
+        id: compositorObj
+    }
+
+    function envValue(keys, fallback) {
+        for (let i = 0; i < keys.length; i++) {
+            const value = Quickshell.env(keys[i]);
+            if (value)
+                return value;
+
+        }
+        return fallback;
+    }
+
+    property string activeScreenName: compositorObj.focusedScreen !== "" ? compositorObj.focusedScreen : (Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")
+    property string mode: ["region", "window"].indexOf(envValue(["QSS_MODE", "HQF_MODE"], "")) !== -1 ? envValue(["QSS_MODE", "HQF_MODE"], "") : "region"
     property var modes: ["edit", "region", "window", "temp"]
-    property bool tempActive: Quickshell.env("HQF_ACTION") === "temp"
-    property bool editActive: Quickshell.env("HQF_ACTION") === "edit"
-    property bool shareActive: Quickshell.env("HQF_ACTION") === "share"
+    property bool tempActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "temp"
+    property bool editActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "edit"
+    property bool shareActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "share"
     property int connectivityStatus: 0
     property string lastSavedPath: ""
     property string lastTimestamp: ""
@@ -80,15 +92,64 @@ Scope {
         return "'" + s.replace(/'/g, "'\\''") + "'";
     }
 
+    // Region coordinates are relative to the selected output; grim expects
+    // layout coordinates, which Quickshell exposes on each screen.
     function grimGeometry(x, y, width, height, screenName) {
         let target = null;
-        for (const m of Hyprland.monitors.values) {
-            if (m.name === screenName) { target = m; break; }
+        for (const s of Quickshell.screens) {
+            if (s.name === screenName) { target = s; break; }
         }
-        if (!target) target = hyprlandMonitor;
-        const mx = target.lastIpcObject.x;
-        const my = target.lastIpcObject.y;
-        return `${Math.round(x + mx)},${Math.round(y + my)} ${Math.round(width)}x${Math.round(height)}`;
+        if (!target) target = Quickshell.screens.length > 0 ? Quickshell.screens[0] : { x: 0, y: 0 };
+        return `${Math.round(x + target.x)},${Math.round(y + target.y)} ${Math.round(width)}x${Math.round(height)}`;
+    }
+
+    // Notifications are optional: prefer Noctalia, fall back to libnotify.
+    function notificationCommand(summary, body, iconPath) {
+        const backend = theme.notifications;
+        if (backend === "none")
+            return "true";
+
+        const noctalia = `command -v noctalia >/dev/null 2>&1 && noctalia msg notification-show ${shellEscape(summary)} ${shellEscape(body)}`;
+        const iconArg = iconPath ? ` -i ${shellEscape(iconPath)}` : "";
+        const libnotify = `command -v notify-send >/dev/null 2>&1 && notify-send -a quickScreenShot${iconArg} ${shellEscape(summary)} ${shellEscape(body)}`;
+
+        if (backend === "noctalia")
+            return `( ${noctalia} ) || true`;
+
+        if (backend === "libnotify")
+            return `( ${libnotify} ) || true`;
+
+        return `( ${noctalia} ) || ( ${libnotify} ) || true`;
+    }
+
+    // Annotation is optional: Noctalia first, then Satty, then Gradia.
+    function annotationCommand(rawPath, outputPath, picturesDir) {
+        const tool = theme.annotationTool;
+        const eRaw = shellEscape(rawPath);
+        const eOut = shellEscape(outputPath);
+        const eDir = shellEscape(picturesDir);
+
+        const noctalia = `noctalia msg annotate ${eRaw} --directory ${eDir} --copy-to-clipboard`;
+        const satty = `satty --filename ${eRaw} --output-filename ${eOut} --early-exit --init-tool brush --copy-command "wl-copy --type image/png"; if [ -f ${eOut} ]; then wl-copy --type image/png < ${eOut}; fi`;
+        const gradia = `setsid -f sh -c 'gradia "$0" || flatpak run be.alexandervanhee.gradia "$0"' ${eRaw} >/dev/null 2>&1`;
+        const plain = `mv -f ${eRaw} ${eOut} && wl-copy --type image/png < ${eOut}`;
+
+        if (tool === "noctalia")
+            return noctalia;
+
+        if (tool === "satty")
+            return satty;
+
+        if (tool === "gradia")
+            return gradia;
+
+        if (tool === "none")
+            return plain;
+
+        return `if command -v noctalia >/dev/null 2>&1; then ${noctalia}; `
+            + `elif command -v satty >/dev/null 2>&1; then ${satty}; `
+            + `elif command -v gradia >/dev/null 2>&1; then ${gradia}; `
+            + `else ${plain}; fi`;
     }
 
     function runPostSaveHook() {
@@ -129,35 +190,32 @@ Scope {
         const shareTag = root.shareActive ? " & phone" : "";
         const mkdirCmd = `mkdir -p ${ePicturesDir}`;
 
-        const sattyCommand =
-            `${mkdirCmd} && ${grimRegion} - `
-            + `| satty --filename - --output-filename ${eOutputPath} --early-exit --init-tool brush --copy-command "wl-copy --type image/png" `
-            + `; if [ -f ${eOutputPath} ]; then wl-copy --type image/png < ${eOutputPath}${maybeShare(eOutputPath)}; fi`;
-        const gradiaCommand =
-            `${mkdirCmd} && ${grimRegion} ${eOutputPath} `
-            + `&& hyprctl dispatch exec -- "gradia ${eOutputPath} || flatpak run be.alexandervanhee.gradia ${eOutputPath}"`;
         const defaultSaveCommand =
             `${mkdirCmd} && ${grimRegion} ${eOutputPath} `
             + `&& wl-copy --type image/png < ${eOutputPath}`
             + `${maybeShare(eOutputPath)} `
-            + `&& notify-send -a "HyprQuickFrame" -i ${eOutputPath} `
-            + `-h string:image-path:${eOutputPath} "Screenshot Saved" `
-            + `"Saved to ${picturesDir}"`;
+            + `&& ${notificationCommand("Screenshot Saved", `Saved to ${picturesDir}`, outputPath)}`;
         const eTempSnip = shellEscape(Quickshell.cachePath(`snip-${timestamp}.png`));
         const tempShareCommand =
             `${grimRegion} ${eTempSnip} `
             + `&& wl-copy --type image/png < ${eTempSnip}`
             + `${maybeShare(eTempSnip)} `
-            + `&& notify-send -a "HyprQuickFrame" "Screenshot Copied" "Copied to clipboard${shareTag}"; `
+            + `&& ${notificationCommand("Screenshot Copied", `Copied to clipboard${shareTag}`)}; `
             + `rm -f ${eTempSnip}`;
         const tempPlainCommand =
             `${grimRegion} - | wl-copy --type image/png `
-            + `&& notify-send -a "HyprQuickFrame" "Screenshot Copied" "Copied to clipboard"`;
+            + `&& ${notificationCommand("Screenshot Copied", "Copied to clipboard")}`;
         const defaultTempCommand = root.shareActive ? tempShareCommand : tempPlainCommand;
+
+        const rawPath = Quickshell.cachePath(`edit-${timestamp}.png`);
+        const eRawPath = shellEscape(rawPath);
+        const editCommand =
+            `${mkdirCmd} && ${grimRegion} ${eRawPath} `
+            + `&& ${annotationCommand(rawPath, outputPath, picturesDir)}`;
 
         let cmd;
         if (root.editActive)
-            cmd = theme.annotationTool === "gradia" ? gradiaCommand : sattyCommand;
+            cmd = editCommand;
         else if (root.tempActive)
             cmd = defaultTempCommand;
         else
@@ -203,7 +261,7 @@ Scope {
             for (const w of overlayVariants.instances) {
                 if (w && w.isReady) return;
             }
-            console.error("HyprQuickFrame: screencopy never produced a frame; exiting.");
+            console.error("quickScreenShot: screencopy never produced a frame; exiting.");
             Qt.quit();
         }
     }
@@ -216,8 +274,8 @@ Scope {
         id: themeFile
 
         property string configHome: Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
-        property string userPath1: configHome + "/hyprquickframe/theme.toml"
-        property string userPath2: configHome + "/quickshell/HyprQuickFrame/theme.toml"
+        property string userPath1: configHome + "/quickScreenShot/theme.toml"
+        property string userPath2: configHome + "/quickshell/quickScreenShot/theme.toml"
         property string defaultPath: Quickshell.shellDir.toString().replace(/^file:\/\//, "") + "/theme.toml"
 
         path: defaultPath
@@ -300,45 +358,38 @@ Scope {
             required property var modelData
             property bool isFocused: modelData.name === root.activeScreenName
             property var themeRef: root.theme
-            property var hyprMonitor: {
-                const monitors = Hyprland.monitors;
-                const monitorsList = (typeof monitors.values === 'function') ? Array.from(monitors.values()) : (monitors.values || monitors);
-                for (let i = 0; i < monitorsList.length; i++) {
-                    const m = monitorsList[i];
-                    if (m && m.name === modelData.name)
-                        return m;
-                }
-                return null;
+            property var monitorInfo: ({
+                name: modelData.name,
+                x: modelData.x,
+                y: modelData.y,
+                width: modelData.width,
+                height: modelData.height
+            })
+            property var windowList: compositorObj.windows.filter(w => w.output === modelData.name)
+
+            function applyCursor() {
+                const pos = compositorObj.cursor;
+                if (!pos || pos.x < 0)
+                    return ;
+
+                const localX = pos.x - modelData.x;
+                const localY = pos.y - modelData.y;
+                regionSelector.mouseX = localX;
+                regionSelector.mouseY = localY;
+                windowSelector.mouseX = localX;
+                windowSelector.mouseY = localY;
             }
 
             targetScreen: modelData
             visible: root.overlaysVisible
-            Component.onCompleted: {
-                if (isFocused)
-                    cursorPosProcess.running = true;
-            }
+            Component.onCompleted: applyCursor()
 
-            Process {
-                id: cursorPosProcess
+            Connections {
+                target: compositorObj
 
-                command: ["hyprctl", "cursorpos", "-j"]
-                running: false
-
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        try {
-                            const pos = JSON.parse(this.text.trim());
-                            const monitorPos = Qt.point(pos.x - modelData.x, pos.y - modelData.y);
-                            regionSelector.mouseX = monitorPos.x;
-                            regionSelector.mouseY = monitorPos.y;
-                            windowSelector.mouseX = monitorPos.x;
-                            windowSelector.mouseY = monitorPos.y;
-                        } catch (e) {
-                            console.warn("Failed to parse cursorpos:", e);
-                        }
-                    }
+                function onCursorChanged() {
+                    overlay.applyCursor();
                 }
-
             }
 
             Shortcut {
@@ -422,7 +473,8 @@ Scope {
 
                 visible: root.mode === "window" && !root.capturing
                 anchors.fill: parent
-                monitor: overlay.hyprMonitor
+                monitor: overlay.monitorInfo
+                windows: overlay.windowList
                 dimOpacity: overlay.themeRef.dimOpacity
                 borderRadius: overlay.themeRef.borderRadius
                 outlineThickness: overlay.themeRef.outlineThickness
