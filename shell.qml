@@ -44,6 +44,27 @@ Scope {
     property bool capturing: false
     property bool overlaysVisible: true
 
+    property string configHome: Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
+    property string stateFile: configHome + "/quickScreenShot/edit_state"
+    property string altStateFile: configHome + "/quickshell/quickScreenShot/edit_state"
+
+    function setEditActive(active) {
+        if (root.editActive === active)
+            return;
+        root.editActive = active;
+        if (active)
+            root.tempActive = false;
+        if (root.theme.rememberEdit)
+            root.persistEditState(active);
+    }
+
+    function persistEditState(active) {
+        const val = active ? "true" : "false";
+        const cmd = `mkdir -p ${shellEscape(root.configHome + "/quickScreenShot")} && printf "%s" "${val}" > ${shellEscape(root.stateFile)}; `
+            + `if [ -f ${shellEscape(root.altStateFile)} ]; then printf "%s" "${val}" > ${shellEscape(root.altStateFile)}; fi`;
+        Quickshell.execDetached(["sh", "-c", cmd]);
+    }
+
     function parseTOML(text) {
         let result = {
         };
@@ -318,8 +339,33 @@ Scope {
             try {
                 let rawText = (typeof text === 'function') ? text() : text;
                 themeObj.source = root.parseTOML(rawText);
+                if (root.envValue(["QSS_ACTION", "HQF_ACTION"], "") === "" && !themeObj.rememberEdit) {
+                    root.editActive = false;
+                }
             } catch (e) {
                 console.warn("Failed to parse theme.toml:", e);
+            }
+        }
+    }
+
+    Process {
+        id: editStateLoader
+
+        running: true
+        command: ["sh", "-c", `if [ -f "${root.stateFile}" ]; then cat "${root.stateFile}"; elif [ -f "${root.altStateFile}" ]; then cat "${root.altStateFile}"; fi`]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (root.envValue(["QSS_ACTION", "HQF_ACTION"], "") !== "")
+                    return;
+                if (!root.theme.rememberEdit)
+                    return;
+                const val = this.text.trim();
+                if (val === "true" || val === "1") {
+                    root.editActive = true;
+                } else if (val === "false" || val === "0") {
+                    root.editActive = false;
+                }
             }
         }
     }
@@ -443,12 +489,7 @@ Scope {
 
             Shortcut {
                 sequence: "e"
-                onActivated: {
-                    root.editActive = !root.editActive;
-                    if (root.editActive)
-                        root.tempActive = false;
-
-                }
+                onActivated: root.setEditActive(!root.editActive)
             }
 
             Shortcut {
@@ -456,8 +497,7 @@ Scope {
                 onActivated: {
                     root.tempActive = !root.tempActive;
                     if (root.tempActive)
-                        root.editActive = false;
-
+                        root.setEditActive(false);
                 }
             }
 
@@ -519,11 +559,10 @@ Scope {
                 onScreenRequested: root.captureScreen(overlay.modelData.name)
                 onTempToggled: {
                     root.tempActive = true;
-                    root.editActive = false;
+                    root.setEditActive(false);
                 }
                 onEditToggled: {
-                    root.editActive = true;
-                    root.tempActive = false;
+                    root.setEditActive(true);
                 }
             }
 
@@ -542,7 +581,7 @@ Scope {
                 targetX: (overlay.width - root.targetMenuWidth) / 2 - 15 - width
                 targetY: segmentedControl.y + segmentedControl.height / 2
                 sourceX: root.tabSourceX(overlay.width, "edit")
-                onClicked: root.editActive = false
+                onClicked: root.setEditActive(false)
             }
 
             QuickToggle {

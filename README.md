@@ -170,6 +170,9 @@ outlineThickness = 2
 bottomMargin = 60
 animations = true
 
+# Remember the edit toggle state across captures (true/false)
+rememberEdit = true
+
 # Final directory for saved screenshots. Empty uses
 # $XDG_PICTURES_DIR/Screenshots, then ~/Pictures/Screenshots.
 saveDirectory = ""

@@ -19,6 +19,7 @@ QtObject {
     readonly property int outlineThickness: _get("outlineThickness", 2)
     readonly property real bottomMargin: _get("bottomMargin", 60)
     readonly property bool animations: _get("animations", true)
+    readonly property bool rememberEdit: _get("rememberEdit", true)
     readonly property string annotationTool: _get("annotationTool", "auto")
     readonly property string notifications: _get("notifications", "auto")
     readonly property string saveDirectory: _get("saveDirectory", "")

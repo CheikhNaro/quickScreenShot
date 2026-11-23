@@ -15,6 +15,8 @@ bottomMargin = 60
 saveDirectory = ""
 # Global animation toggle (true/false)
 animations = true
+# Remember the edit toggle state across captures (true/false)
+rememberEdit = true
 # Tool to use for the "edit" screenshot action.
 # "auto" picks the first available: noctalia, satty, gradia.
 # Other values: "noctalia", "satty", "gradia", "none" (save without editing).
