@@ -1,0 +1,11 @@
+{
+  "mPrimary": "{{ colors.primary.default.hex }}",
+  "mOnPrimary": "{{ colors.on_primary.default.hex }}",
+  "mSecondary": "{{ colors.secondary.default.hex }}",
+  "mTertiary": "{{ colors.tertiary.default.hex }}",
+  "mSurface": "{{ colors.surface.default.hex }}",
+  "mOutline": "{{ colors.outline.default.hex }}",
+  "mOnSurfaceVariant": "{{ colors.on_surface_variant.default.hex }}",
+  "mError": "{{ colors.error.default.hex }}",
+  "mOnError": "{{ colors.on_error.default.hex }}"
+}

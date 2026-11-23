@@ -32,7 +32,7 @@ Scope {
 
     property string activeScreenName: compositorObj.focusedScreen !== "" ? compositorObj.focusedScreen : (Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")
     property string mode: ["region", "window"].indexOf(envValue(["QSS_MODE", "HQF_MODE"], "")) !== -1 ? envValue(["QSS_MODE", "HQF_MODE"], "") : "region"
-    property var modes: ["edit", "region", "window", "temp"]
+    property var modes: ["edit", "region", "window", "screen", "temp"]
     property bool tempActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "temp"
     property bool editActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "edit"
     property bool shareActive: envValue(["QSS_ACTION", "HQF_ACTION"], "") === "share"
@@ -153,6 +153,31 @@ Scope {
             + `elif command -v satty >/dev/null 2>&1; then ${satty}; `
             + `elif command -v gradia >/dev/null 2>&1; then ${gradia}; `
             + `else ${plain}; fi`;
+    }
+
+    // X position where a tab sits while the bar is fully expanded. Used as the
+    // starting point of the edit/temp toggle animations.
+    function tabSourceX(overlayWidth, modeName) {
+        const expandedWidth = root.modes.length * 100 + 8;
+        const index = root.modes.indexOf(modeName);
+        return (overlayWidth - expandedWidth) / 2 + 4 + index * 100 + 50 - 22;
+    }
+
+    function captureScreen(screenName) {
+        let target = null;
+        for (const s of Quickshell.screens) {
+            if (s.name === screenName) {
+                target = s;
+                break;
+            }
+        }
+        if (!target && Quickshell.screens.length > 0)
+            target = Quickshell.screens[0];
+
+        if (!target)
+            return ;
+
+        root.saveScreenshot(0, 0, target.width, target.height, target.name);
     }
 
     function runPostSaveHook() {
@@ -412,19 +437,7 @@ Scope {
 
             Shortcut {
                 sequence: "s"
-                onActivated: {
-                    let targetMon = overlay.modelData;
-                    if (root.activeScreenName && root.activeScreenName !== targetMon.name) {
-                        const screens = Quickshell.screens;
-                        for (let i = 0; i < screens.length; i++) {
-                            if (screens[i].name === root.activeScreenName) {
-                                targetMon = screens[i];
-                                break;
-                            }
-                        }
-                    }
-                    root.saveScreenshot(0, 0, targetMon.width, targetMon.height, targetMon.name);
-                }
+                onActivated: root.captureScreen(root.activeScreenName || overlay.modelData.name)
             }
 
             Shortcut {
@@ -502,6 +515,7 @@ Scope {
                 onModeSelected: (m) => {
                     return root.mode = m;
                 }
+                onScreenRequested: root.captureScreen(overlay.modelData.name)
                 onTempToggled: {
                     root.tempActive = true;
                     root.editActive = false;
@@ -526,7 +540,7 @@ Scope {
                 borderWidth: 1
                 targetX: (overlay.width - root.targetMenuWidth) / 2 - 15 - width
                 targetY: segmentedControl.y + segmentedControl.height / 2
-                sourceX: overlay.width / 2 - 204 + 32
+                sourceX: root.tabSourceX(overlay.width, "edit")
                 onClicked: root.editActive = false
             }
 
@@ -544,7 +558,7 @@ Scope {
                 borderWidth: 1
                 targetX: (overlay.width + root.targetMenuWidth) / 2 + 15
                 targetY: segmentedControl.y + segmentedControl.height / 2
-                sourceX: overlay.width / 2 - 204 + 332
+                sourceX: root.tabSourceX(overlay.width, "temp")
                 onClicked: root.tempActive = false
             }
 

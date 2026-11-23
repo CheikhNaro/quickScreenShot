@@ -14,6 +14,7 @@ Rectangle {
     signal modeSelected(string mode)
     signal tempToggled()
     signal editToggled()
+    signal screenRequested()
 
     height: 50
     width: targetMenuWidth
@@ -78,6 +79,8 @@ Rectangle {
                             root.tempToggled();
                         else if (modelData === "edit")
                             root.editToggled();
+                        else if (modelData === "screen")
+                            root.screenRequested();
                         else
                             root.modeSelected(modelData);
                     }
@@ -89,19 +92,22 @@ Rectangle {
                         const icons = {
                             "region": "󰒉",
                             "window": "󱂬",
+                            "screen": "󰍹",
                             "temp": "󰅇",
                             "edit": "󰏫"
                         };
                         const labels = {
                             "region": "Region",
                             "window": "Window",
+                            "screen": "Screen",
                             "temp": "Temp",
                             "edit": "Edit"
                         };
                         return icons[modelData] + "  " + labels[modelData];
                     }
-                    color: (modelData === "temp" || modelData === "edit") ? (theme ? theme.barText : "white") : (root.mode === modelData ? (theme ? theme.accentText : "black") : (theme ? theme.barText : "white"))
-                    font.weight: (modelData === "temp" || modelData === "edit") ? Font.Medium : (root.mode === modelData ? Font.Bold : Font.Medium)
+                    readonly property bool isAction: modelData === "temp" || modelData === "edit" || modelData === "screen"
+                    color: isAction ? (theme ? theme.barText : "white") : (root.mode === modelData ? (theme ? theme.accentText : "black") : (theme ? theme.barText : "white"))
+                    font.weight: isAction ? Font.Medium : (root.mode === modelData ? Font.Bold : Font.Medium)
                     font.pixelSize: 15
                     opacity: tabItem.collapsed ? 0 : 1
 

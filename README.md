@@ -12,9 +12,8 @@ animations and intelligent window snapping, and works with **Hyprland**,
 
 ## ✨ Features
 
-* **Capture modes:** region (drag to select), window (hover to select) and
-  temp (clipboard only).
-* **Full-screen capture:** press `s` in the overlay.
+* **Capture modes:** region (drag to select), window (hover to select), screen
+  (whole output) and temp (clipboard only).
 * **Optional annotation:** hands the capture to Noctalia, Satty or Gradia when
   one of them is installed.
 * **Optional notifications:** uses Noctalia when available, then falls back to
@@ -132,6 +131,15 @@ compositors above.
 
 ## ⌨️ Overlay shortcuts
 
+The bar exposes these modes:
+
+* **Region** — drag to select an area.
+* **Window** — hover a window and click to capture it.
+* **Screen** — click to capture the whole output immediately.
+* **Temp** — copy to the clipboard without writing a file. Use it for quick
+  pastes that you do not want to keep in `~/Pictures/Screenshots`.
+* **Edit** — open the capture in the annotation tool before saving.
+
 | Key       | Action                          |
 | --------- | ------------------------------- |
 | Drag      | Select a region                 |
@@ -186,14 +194,32 @@ fallback. Set `notifications = "none"` to disable them completely.
 
 ### Noctalia color sync
 
-`scripts/sync_theme.py` copies the current Noctalia palette into `theme.toml`:
+`scripts/sync_theme.py` copies the current Noctalia palette into
+`~/.config/quickScreenShot/theme.toml`, creating that file from the bundled
+`theme.toml` the first time. Only the color keys are rewritten, so custom
+spacing, hooks and integration choices are preserved.
+
+Run it manually:
 
 ```sh
 python3 ~/.config/quickshell/quickScreenShot/scripts/sync_theme.py
 ```
 
-Run it from a Noctalia template hook or a wallpaper-change hook to keep the
-overlay in sync with your theme.
+To sync automatically, copy `extras/noctalia/quickscreenshot-colors.json` to
+`~/.config/noctalia/templates/`, then register it in
+`~/.config/noctalia/theme.toml` (use absolute paths):
+
+```toml
+[theme.templates.user.quickscreenshot-colors]
+enabled     = true
+input_path  = "/home/you/.config/noctalia/templates/quickscreenshot-colors.json"
+output_path = "/home/you/.cache/noctalia/quickscreenshot-colors.json"
+post_hook   = "python3 /home/you/.config/quickshell/quickScreenShot/scripts/sync_theme.py"
+hook_async  = true
+```
+
+Noctalia regenerates the palette on every wallpaper/scheme change and runs the
+hook, so the overlay follows the desktop theme.
 
 ### Post-save hook
 

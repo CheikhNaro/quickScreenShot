@@ -3,16 +3,32 @@ import json
 import os
 import sys
 import re
+import shutil
 
-# Define paths
-NOCTALIA_COLORS = os.path.expanduser("~/.config/noctalia/colors.json")
-THEME_CANDIDATES = [
-    os.path.expanduser("~/.config/quickScreenShot/theme.toml"),
-    os.path.expanduser("~/.config/quickshell/quickScreenShot/theme.toml"),
+# Noctalia exports the M3 roles we need through the quickscreenshot-colors
+# template. Fall back to a colors.json if someone provides one.
+COLOR_CANDIDATES = [
+    os.path.expanduser("~/.cache/noctalia/quickscreenshot-colors.json"),
+    os.path.expanduser("~/.config/noctalia/colors.json"),
 ]
-THEME_TOML = next((p for p in THEME_CANDIDATES if os.path.isfile(p)), THEME_CANDIDATES[0])
+
+BUNDLED_THEME = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "theme.toml"
+)
+USER_THEME = os.path.expanduser("~/.config/quickScreenShot/theme.toml")
+
+NOCTALIA_COLORS = next((p for p in COLOR_CANDIDATES if os.path.isfile(p)), COLOR_CANDIDATES[0])
+
 if len(sys.argv) > 1:
     THEME_TOML = os.path.expanduser(sys.argv[1])
+elif os.path.isfile(USER_THEME):
+    THEME_TOML = USER_THEME
+elif os.path.isfile(BUNDLED_THEME):
+    os.makedirs(os.path.dirname(USER_THEME), exist_ok=True)
+    shutil.copyfile(BUNDLED_THEME, USER_THEME)
+    THEME_TOML = USER_THEME
+else:
+    THEME_TOML = USER_THEME
 
 # Mapping: (Section, Key) -> Noctalia Color Key
 # Section None means global
@@ -20,7 +36,7 @@ COLOR_MAPPING = {
     (None, "accent"): "mPrimary",
     (None, "accentText"): "mOnPrimary",
     
-    # ("bar", "background"): ("mSurface", 1.0),
+    ("bar", "background"): ("mSurface", 0.4),
     ("bar", "border"): "mOutline",
     ("bar", "text"): "mOnSurfaceVariant",
     
