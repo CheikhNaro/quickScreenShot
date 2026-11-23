@@ -33,7 +33,7 @@ Item {
     id: root
 
     property real dimOpacity: 0.6
-    property real borderRadius: 10
+    property real borderRadius: 0
     property real outlineThickness: 2
     property url fragmentShader: Qt.resolvedUrl("../shaders/dimming.frag.qsb")
     property point startPos
@@ -256,11 +256,11 @@ Item {
     }
 
     Behavior on selectionX {
-        enabled: root.animateSelection && root.globalAnimations
+        enabled: root.animateSelection && root.globalAnimations && !root.selecting
 
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }
@@ -268,11 +268,11 @@ Item {
     }
 
     Behavior on selectionY {
-        enabled: root.animateSelection && root.globalAnimations
+        enabled: root.animateSelection && root.globalAnimations && !root.selecting
 
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }
@@ -280,11 +280,11 @@ Item {
     }
 
     Behavior on selectionWidth {
-        enabled: root.animateSelection && root.globalAnimations
+        enabled: root.animateSelection && root.globalAnimations && !root.selecting
 
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }
@@ -292,11 +292,11 @@ Item {
     }
 
     Behavior on selectionHeight {
-        enabled: root.animateSelection && root.globalAnimations
+        enabled: root.animateSelection && root.globalAnimations && !root.selecting
 
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }

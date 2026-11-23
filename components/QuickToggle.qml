@@ -19,8 +19,8 @@ Rectangle {
     readonly property real activeIconSize: 30
     readonly property real inactiveIconSize: 20
     readonly property real pulseMinOpacity: 0.3
-    readonly property int springAnimDuration: 350
-    readonly property int fadeAnimDuration: 250
+    readonly property int springAnimDuration: 180
+    readonly property int fadeAnimDuration: 120
     readonly property int pulseStepDuration: 600
     property url imageSource: ""
     property color borderColor: "transparent"
@@ -167,8 +167,8 @@ Rectangle {
     Behavior on x {
         // Configuration for spring-based transitions
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }
@@ -177,8 +177,8 @@ Rectangle {
 
     Behavior on y {
         SpringAnimation {
-            spring: 5
-            damping: 0.7
+            spring: 15
+            damping: 8.5
             mass: 1.0
             epsilon: 0.1
         }

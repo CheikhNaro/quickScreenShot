@@ -165,10 +165,14 @@ overlay opens.
 accent = "#cba6f7"
 accentText = "#11111b"
 dimOpacity = 0.6
-borderRadius = 10
+borderRadius = 0
 outlineThickness = 2
 bottomMargin = 60
 animations = true
+
+# Final directory for saved screenshots. Empty uses
+# $XDG_PICTURES_DIR/Screenshots, then ~/Pictures/Screenshots.
+saveDirectory = ""
 
 # "auto" picks the first available: noctalia, satty, gradia.
 # Other values: "noctalia", "satty", "gradia", "none".
@@ -183,7 +187,8 @@ notifications = "auto"
 With `annotationTool = "auto"`:
 
 * `noctalia msg annotate` is used when Noctalia is installed. The raw capture
-  is opened in Noctalia's editor, which applies its own save/copy settings.
+  is opened in Noctalia's editor, which saves into `saveDirectory` and copies
+  according to its own settings.
 * Otherwise `satty` is used, then `gradia`.
 * `none` saves the capture without opening an editor.
 

@@ -43,8 +43,8 @@ Rectangle {
 
         Behavior on x {
             SpringAnimation {
-                spring: 4
-                damping: 0.25
+                spring: 15
+                damping: 8.5
                 mass: 1
             }
 
@@ -113,7 +113,7 @@ Rectangle {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: 150
+                            duration: 90
                         }
 
                     }
@@ -137,8 +137,8 @@ Rectangle {
 
     Behavior on width {
         SpringAnimation {
-            spring: 4
-            damping: 0.25
+            spring: 15
+            damping: 8.5
             mass: 1
         }
 

@@ -4,12 +4,15 @@ accent = "#cba6f7"
 accentText = "#11111b"
 # Dim overlay opacity when selecting (0.0 - 1.0)
 dimOpacity = 0.6
-# Corner radius on selection outline
-borderRadius = 10
+# Corner radius on selection outline (0 = square corners)
+borderRadius = 0
 # Selection outline thickness
 outlineThickness = 2
 # Distance from bottom edge to the bar
 bottomMargin = 60
+# Where screenshots are saved. Empty uses $XDG_PICTURES_DIR/Screenshots,
+# falling back to ~/Pictures/Screenshots.
+saveDirectory = ""
 # Global animation toggle (true/false)
 animations = true
 # Tool to use for the "edit" screenshot action.

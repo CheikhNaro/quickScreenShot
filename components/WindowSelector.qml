@@ -44,7 +44,7 @@ Item {
     onMouseYChanged: updateHovered()
 
     property real dimOpacity: 0.6
-    property real borderRadius: 10.0
+    property real borderRadius: 0.0
     property real outlineThickness: 2.0
     property url fragmentShader: Qt.resolvedUrl("../shaders/dimming.frag.qsb")
 
@@ -80,10 +80,10 @@ Item {
         selectionHeight = hit.h;
     }
 
-    Behavior on selectionX { enabled: root.animateSelection; SpringAnimation { spring: 5; damping: 0.7; mass: 1.0; epsilon: 0.1 } }
-    Behavior on selectionY { enabled: root.animateSelection; SpringAnimation { spring: 5; damping: 0.7; mass: 1.0; epsilon: 0.1 } }
-    Behavior on selectionHeight { enabled: root.animateSelection; SpringAnimation { spring: 5; damping: 0.7; mass: 1.0; epsilon: 0.1 } }
-    Behavior on selectionWidth { enabled: root.animateSelection; SpringAnimation { spring: 5; damping: 0.7; mass: 1.0; epsilon: 0.1 } }
+    Behavior on selectionX { enabled: root.animateSelection; SpringAnimation { spring: 15; damping: 8.5; mass: 1.0; epsilon: 0.1 } }
+    Behavior on selectionY { enabled: root.animateSelection; SpringAnimation { spring: 15; damping: 8.5; mass: 1.0; epsilon: 0.1 } }
+    Behavior on selectionHeight { enabled: root.animateSelection; SpringAnimation { spring: 15; damping: 8.5; mass: 1.0; epsilon: 0.1 } }
+    Behavior on selectionWidth { enabled: root.animateSelection; SpringAnimation { spring: 15; damping: 8.5; mass: 1.0; epsilon: 0.1 } }
 
 
     ShaderEffect {

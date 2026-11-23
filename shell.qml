@@ -132,7 +132,8 @@ Scope {
         const eOut = shellEscape(outputPath);
         const eDir = shellEscape(picturesDir);
 
-        const noctalia = `noctalia msg annotate ${eRaw} --directory ${eDir} --copy-to-clipboard`;
+        // Noctalia's CLI only parses options before the path.
+        const noctalia = `noctalia msg annotate --directory ${eDir} --copy-to-clipboard ${eRaw}`;
         const satty = `satty --filename ${eRaw} --output-filename ${eOut} --early-exit --init-tool brush --copy-command "wl-copy --type image/png"; if [ -f ${eOut} ]; then wl-copy --type image/png < ${eOut}; fi`;
         const gradia = `setsid -f sh -c 'gradia "$0" || flatpak run be.alexandervanhee.gradia "$0"' ${eRaw} >/dev/null 2>&1`;
         const plain = `mv -f ${eRaw} ${eOut} && wl-copy --type image/png < ${eOut}`;
@@ -199,7 +200,7 @@ Scope {
     function saveScreenshot(x, y, width, height, screenName) {
         const geom = grimGeometry(x, y, width, height, screenName);
         const picturesBase = Quickshell.env("XDG_PICTURES_DIR") || (Quickshell.env("HOME") + "/Pictures");
-        const picturesDir = picturesBase + "/Screenshots";
+        const picturesDir = theme.saveDirectory || (picturesBase + "/Screenshots");
         const timestamp = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss");
         const outputPath = `${picturesDir}/screenshot-${timestamp}.png`;
         root.lastTimestamp = timestamp;
