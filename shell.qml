@@ -109,17 +109,20 @@ Scope {
         if (backend === "none")
             return "true";
 
-        const noctalia = `command -v noctalia >/dev/null 2>&1 && noctalia msg notification-show ${shellEscape(summary)} ${shellEscape(body)}`;
+        const noctalia = `noctalia msg notification-show ${shellEscape(summary)} ${shellEscape(body)}`;
         const iconArg = iconPath ? ` -i ${shellEscape(iconPath)}` : "";
-        const libnotify = `command -v notify-send >/dev/null 2>&1 && notify-send -a quickScreenShot${iconArg} ${shellEscape(summary)} ${shellEscape(body)}`;
+        const libnotify = `notify-send -a quickScreenShot${iconArg} ${shellEscape(summary)} ${shellEscape(body)}`;
 
+        // Keep the command a plain `if` so it can be chained with `&&`
+        // without running when the capture step failed.
         if (backend === "noctalia")
-            return `( ${noctalia} ) || true`;
+            return `if command -v noctalia >/dev/null 2>&1; then ${noctalia}; fi`;
 
         if (backend === "libnotify")
-            return `( ${libnotify} ) || true`;
+            return `if command -v notify-send >/dev/null 2>&1; then ${libnotify}; fi`;
 
-        return `( ${noctalia} ) || ( ${libnotify} ) || true`;
+        return `if command -v noctalia >/dev/null 2>&1; then ${noctalia}; `
+            + `elif command -v notify-send >/dev/null 2>&1; then ${libnotify}; fi`;
     }
 
     // Annotation is optional: Noctalia first, then Satty, then Gradia.
